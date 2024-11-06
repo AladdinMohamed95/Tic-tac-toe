@@ -1,72 +1,68 @@
 "use client";
-import { useEffect, useState } from "react";
-import Cell, { cellProps } from "./components/cell";
-
-const winningCombos = [
-  [0, 1, 2],
-  [3, 4, 5],
-  [6, 7, 8],
-  [0, 3, 6],
-  [1, 4, 7],
-  [2, 5, 8],
-  [0, 4, 8],
-  [2, 4, 6],
-];
+import { ChangeEvent, useEffect, useState } from "react";
 
 export default function Home() {
-  const [cells, setCells] = useState(["", "", "", "", "", "", "", "", ""]);
-  const [value, setValue] = useState("circle");
-  const [winningMessage, setWinningMessage] = useState("");
-  console.log(cells);
-  useEffect(() => {
-    winningCombos.forEach((combo) => {
-      const circleWins = combo.every((cell) => cells[cell] === "circle");
-      const crossWins = combo.every((cell) => cells[cell] === "cross");
-      if (circleWins) {
-        setWinningMessage("circle Wins!");
-      } else if (crossWins) {
-        setWinningMessage("cross Wins!");
-      }
-    });
-  }, [cells]);
+  const [message, setMessage] = useState<string>("");
+  const [channelName, setChannelName] = useState<string>("");
+
+  const generateRandomWord = (length = 4) => {
+    const characters = "abcdefghijklmnopqrstuvwxyz";
+    let result = "";
+    for (let i = 0; i < length; i++) {
+      const randomIndex = Math.floor(Math.random() * characters.length);
+      result += characters[randomIndex];
+    }
+    return result;
+  };
 
   useEffect(() => {
-    if (cells.every((cell) => cell !== "" && !winningMessage)) {
-      setWinningMessage("draw!");
+    setChannelName(generateRandomWord()); // Set the generated word as the channel name
+  }, []);
+
+  const sendMessage = async () => {
+    const response = await fetch("/api/send-message", {
+      method: "POST",
+      body: JSON.stringify({ message, channelName }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (response.ok) {
+      console.log("Message sent:", message);
+      setMessage("");
+    } else {
+      console.error("Failed to send message");
     }
-  }, [cells, winningMessage]);
+  };
+
+  const handleTextChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setMessage(event.target.value);
+  };
 
   return (
-    <main className="bg-amber-500 flex justify-center items-center h-[100vh]">
-      <div className=" bg-gray-800 flex flex-col text-center rounded-md justify-center gap-2 p-4 px-8">
-        <h1 className="text-slate-300 font-extrabold text-4xl">Tic Tac Toe</h1>
+    <main className="bg-gradient-to-r from-cyan-500 to-blue-500  flex justify-center items-center h-[100vh]">
+      <div className=" bg-gray-800 flex flex-col text-center rounded-md justify-center gap-2 p-20">
+        <h1 className="text-slate-300 font-extrabold text-4xl">Copyfier</h1>
+        <p className="text-slate-300 font-semibold text-lg">
+          Channel Name:{" "}
+          <span className="text-slate-100 font-bold">{channelName}</span>
+        </p>
         <div className="mr-auto">
+          <input
+            type="text"
+            placeholder="Paste your text here "
+            value={message}
+            onChange={handleTextChange}
+            multiple
+            className="border border-gray-800 p-4 text-slate-900 rounded-xl"
+          />
           <button
-            className="border border-amber-300 p-2  text-slate-300"
-            onClick={() => {
-              window.location.reload();
-            }}
+            className="border border-blue-600 p-4 m-4 bg-slate-200 font-bold text-slate-900 rounded-xl"
+            onClick={sendMessage}
           >
-            New Game!
+            send a message!
           </button>
-        </div>
-        <div id="gameboard">
-          {cells.map((cell, i) => (
-            <Cell
-              id={i}
-              value={value}
-              setValue={setValue}
-              key={i}
-              cells={cells}
-              setCells={setCells}
-              cell={cell}
-              winningMessage={winningMessage}
-            />
-          ))}
-        </div>
-        <div className="text-slate-300">{winningMessage}</div>
-        <div className="text-slate-300">
-          {winningMessage ? "" : `this is ${value} turn!`}
         </div>
       </div>
     </main>
